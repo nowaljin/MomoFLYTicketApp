@@ -89,7 +89,14 @@ public partial class Form1 : Form
     }
 
     private string ConnectionString => connectionStringBox.Text.Trim();
-    private IMongoDatabase Database => new MongoClient(ConnectionString).GetDatabase(DatabaseName);
+    private IMongoDatabase Database
+    {
+        get
+        {
+            var service = MongoDbService.GetInstance(ConnectionString, DatabaseName);
+            return service.Database;
+        }
+    }
     private CollectionDefinition CurrentCollection => collections[(string)collectionSelector.SelectedItem!];
 
     private void BuildInterface()
@@ -115,7 +122,7 @@ public partial class Form1 : Form
 
         connectionPanel.Controls.Add(new Label { Text = "MongoDB URI", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
         connectionStringBox.Dock = DockStyle.Fill;
-        connectionStringBox.Text = "mongodb+srv://momoplane:momomongo@cluster0.bhly1yt.mongodb.net/?appName=Cluster0";
+        connectionStringBox.Text = "mongodb+srv://momoplane:momomongo@cluster0.bhly1yt.mongodb.net/?appName=Cluster0&serverSelectionTimeoutMS=10000&connectTimeoutMS=10000";
         connectionPanel.Controls.Add(connectionStringBox, 1, 0);
 
         var testButton = new Button { Text = "Test", Dock = DockStyle.Fill };
@@ -552,12 +559,22 @@ public partial class Form1 : Form
     {
         try
         {
-            new MongoClient(ConnectionString).ListDatabaseNames().FirstOrDefault();
-            SetStatus("MongoDB connection successful.");
+            // Reset to reinitialize with any new connection string
+            MongoDbService.ResetInstance();
+            var service = MongoDbService.GetInstance(ConnectionString, DatabaseName);
+            
+            if (service.TestConnection())
+            {
+                SetStatus("✓ MongoDB connection successful. Server is responding.");
+            }
+            else
+            {
+                SetStatus("✗ MongoDB connection failed. Please check your connection string.");
+            }
         }
         catch (Exception ex)
         {
-            SetStatus(ex.Message);
+            SetStatus($"✗ Connection error: {ex.Message}");
         }
     }
 
@@ -677,4 +694,5 @@ public partial class Form1 : Form
         Choice
     }
 }
+
 
