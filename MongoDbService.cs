@@ -1,5 +1,6 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Driver;
+using System.Security.Authentication;
 
 namespace AirlineTicketReservationSystem;
 
@@ -21,6 +22,12 @@ public class MongoDbService : IDisposable
         // Configure client settings with ServerApi for compatibility
         var settings = MongoClientSettings.FromConnectionString(connectionUri);
         settings.ServerApi = new ServerApi(ServerApiVersion.V1);
+        settings.UseTls = true;
+        settings.SslSettings = new SslSettings
+        {
+            EnabledSslProtocols = SslProtocols.Tls12,
+            CheckCertificateRevocation = false
+        };
 
         // Configure connection pooling for desktop application
         // Desktop apps are long-running with stable concurrency
